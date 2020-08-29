@@ -30,7 +30,7 @@ import "codemirror/addon/dialog/dialog.css";
 import "codemirror/addon/fold/foldgutter.css";
 import "codemirror/addon/hint/show-hint.css";
 
-import { _, fetchAPI, getScriptTagJSON } from "./helpers";
+import { _ } from "./i18n";
 import router, { initSyncedStoreValues } from "./router";
 import { CopyableSpan } from "./clipboard";
 import { BeancountTextarea } from "./editor";
@@ -43,12 +43,7 @@ import { notify } from "./notifications";
 import { updateSidebar, AsideButton, ErrorCount } from "./sidebar";
 import { SortableTable } from "./sort";
 import { TreeTable } from "./tree-table";
-import {
-  favaAPI,
-  favaAPIStore,
-  favaAPIValidator,
-  fetchErrorCount,
-} from "./stores";
+import { favaAPI, favaAPIStore, favaAPIValidator, errorCount } from "./stores";
 
 import Editor from "./editor/Editor.svelte";
 import Import from "./import/Import.svelte";
@@ -57,6 +52,8 @@ import FilterForm from "./FilterForm.svelte";
 import Documents from "./documents/Documents.svelte";
 import Modals from "./modals/Modals.svelte";
 import Query from "./query/Query.svelte";
+import { getScriptTagJSON } from "./lib/dom";
+import { get } from "./api";
 
 customElements.define("aside-button", AsideButton, { extends: "button" });
 customElements.define("beancount-textarea", BeancountTextarea, {
@@ -116,13 +113,13 @@ router.on("page-loaded", () => {
  * This will be scheduled every 5 seconds.
  */
 async function doPoll(): Promise<void> {
-  const changed = await fetchAPI("changed");
+  const changed = await get("changed");
   if (changed) {
     if (favaAPI.favaOptions["auto-reload"]) {
       router.reload();
     } else {
       reloadButton?.classList.remove("hidden");
-      fetchErrorCount();
+      errorCount.set(await get("errors"));
       notify(_("File change detected. Click to reload."), "warning", () => {
         router.reload();
       });

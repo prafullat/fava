@@ -2,9 +2,14 @@
   import { setContext } from "svelte";
   import { writable } from "svelte/store";
 
-  import { _ } from "../helpers";
+  import { _ } from "../i18n";
   import { keyboardShortcut } from "../keyboard-shortcuts";
-  import { chartCurrency, chartMode, showCharts } from "../stores/chart";
+  import {
+    chartCurrency,
+    lineChartMode,
+    chartMode,
+    showCharts,
+  } from "../stores/chart";
 
   import ChartLegend from "./ChartLegend.svelte";
   import BarChart from "./BarChart.svelte";
@@ -12,16 +17,25 @@
   import LineChart from "./LineChart.svelte";
   import ScatterPlot from "./ScatterPlot.svelte";
 
-  // The chart to render.
+  /**
+   * The chart to render.
+   * @type {import(".").NamedChartTypes}
+   */
   export let chart;
 
-  // Width of the chart.
+  /**
+   * Width of the chart.
+   * @type {number}
+   */
   let width;
 
+  /** @type {import("svelte/store").Writable<string[]>} */
   const currencies = writable([]);
+  setContext("chart-currencies", currencies);
+
+  /** @type {import("svelte/store").Writable<[string,string][]>} */
   const legend = writable([]);
   setContext("chart-legend", legend);
-  setContext("chart-currencies", currencies);
 
   $: if (chart) {
     // Reset the chart legend on chart change.
@@ -56,6 +70,17 @@
         <label>
           <input type="radio" bind:group={$chartMode} value="sunburst" />
           <span class="button">{_('Sunburst')}</span>
+        </label>
+      </span>
+    {:else if chart.type === 'linechart'}
+      <span class="chart-mode">
+        <label>
+          <input type="radio" bind:group={$lineChartMode} value="line" />
+          <span class="button">{_('Line chart')}</span>
+        </label>
+        <label>
+          <input type="radio" bind:group={$lineChartMode} value="area" />
+          <span class="button">{_('Area chart')}</span>
         </label>
       </span>
     {/if}

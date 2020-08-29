@@ -1,21 +1,28 @@
 <script>
-  import { saveEntries } from "../api";
-  import { _, fetchAPI } from "../helpers";
+  import { get, saveEntries } from "../api";
+  import { _ } from "../i18n";
   import { urlHash, closeOverlay } from "../stores";
 
   import ModalBase from "../modals/ModalBase.svelte";
-  import Balance from "../entry-forms/Balance.svelte";
-  import Note from "../entry-forms/Note.svelte";
-  import Transaction from "../entry-forms/Transaction.svelte";
+  import Entry from "../entry-forms/Entry.svelte";
 
+  /** @type {import('../entries').Entry[]} */
   let entries = [];
-  let component;
+  /** @type {number} */
   let currentIndex = 0;
+  /** @type {boolean} */
   let duplicate;
+  /** @type {number} */
   let duplicates;
+
+  /** @type {import('../entries').Entry} */
   let entry;
+  /** @type {boolean} */
   let shown;
 
+  /**
+   * @param {import("../entries").Entry} e
+   */
   function isDuplicate(e) {
     return !!e.meta.__duplicate__;
   }
@@ -23,15 +30,14 @@
   $: shown = $urlHash.startsWith("extract");
   $: if (shown) {
     const params = new URLSearchParams($urlHash.slice(8));
-    const filename = params.get("filename");
-    const importer = params.get("importer");
-    fetchAPI("extract", { filename, importer }).then((data) => {
+    const filename = params.get("filename") || "";
+    const importer = params.get("importer") || "";
+    get("extract", { filename, importer }).then((data) => {
       entries = data;
     });
   }
   $: entry = entries[currentIndex];
   $: if (entry) {
-    component = { Balance, Note, Transaction }[entry.type];
     duplicates = entry && entries.filter((e) => isDuplicate(e)).length;
     duplicate = isDuplicate(entry);
   }
@@ -84,7 +90,7 @@
         </label>
       </div>
       <div class:duplicate>
-        <svelte:component this={component} bind:entry />
+        <Entry bind:entry />
       </div>
       <div class="flex-row">
         {#if currentIndex > 0}
@@ -119,7 +125,7 @@
       {#if entry.meta.__source__}
         <h3>
           {_('Source')}
-          {#if entry.meta.lineno > 0}({_('Line')}: {entry.meta.lineno}){/if}
+          {#if entry.meta.lineno}({_('Line')}: {entry.meta.lineno}){/if}
         </h3>
         <pre>{entry.meta.__source__}</pre>
       {/if}

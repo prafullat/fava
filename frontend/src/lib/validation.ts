@@ -5,6 +5,7 @@
  * an API, is of a specified type.
  */
 
+/** A validation error. */
 class ValidationError extends Error {}
 
 /**
@@ -15,6 +16,22 @@ class ValidationError extends Error {}
  */
 export interface Validator<T> {
   (json: unknown): T;
+}
+
+/**
+ * Validate as unknown (noop).
+ */
+export function defaultValue<T>(
+  validator: Validator<T>,
+  value: T
+): Validator<T> {
+  return (json: unknown): T => {
+    try {
+      return validator(json);
+    } catch (err) {
+      return value;
+    }
+  };
 }
 
 /**
@@ -33,6 +50,9 @@ export function string(json: unknown): string {
   }
   throw new ValidationError(`Expected a string, got '${json}' instead.`);
 }
+
+/** Validate a string and return the empty string on failure. */
+export const optional_string = defaultValue(string, "");
 
 /**
  * Validate a boolean.

@@ -20,6 +20,7 @@ If this setting is not specified, Fava will try to guess the language from your
 browser settings. Fava currently ships translations into the following
 languages:
 
+-   Catalan (`ca`)
 -   Chinese (`zh_CN` and `zh_TW`)
 -   Dutch (`nl`)
 -   English (`en`)
@@ -79,6 +80,12 @@ See [Fiscal Year on WikiPedia](https://en.wikipedia.org/wiki/Fiscal_year) for
 more examples.
 
 ---
+
+## `indent`
+
+Default: 2.
+
+The number spaces for indentation.
 
 ## `insert-entry`
 

@@ -7,7 +7,7 @@
 import { hierarchy, HierarchyNode } from "d3-hierarchy";
 import { derived, get } from "svelte/store";
 
-import { getScriptTagJSON } from "../helpers";
+import { getScriptTagJSON } from "../lib/dom";
 import { conversion, operating_currency } from "../stores";
 import { formatCurrency, dateFormat, currentDateFormat } from "../format";
 import {
@@ -23,7 +23,7 @@ import {
   Validator,
 } from "../lib/validation";
 
-interface AccountHierarchyDatum {
+export interface AccountHierarchyDatum {
   account: string;
   balance: Record<string, number | undefined>;
   dummy?: boolean;
@@ -31,7 +31,7 @@ interface AccountHierarchyDatum {
 interface AccountHierarchy extends AccountHierarchyDatum {
   children: AccountHierarchy[];
 }
-type AccountHierarchyNode = HierarchyNode<AccountHierarchyDatum>;
+export type AccountHierarchyNode = HierarchyNode<AccountHierarchyDatum>;
 
 /**
  * Add internal nodes as fake leaf nodes to their own children.
@@ -47,19 +47,19 @@ function addInternalNodesAsLeaves(node: AccountHierarchy): void {
   }
 }
 
-interface ScatterPlotDatum {
+export interface ScatterPlotDatum {
   date: Date;
   type: string;
   description: string;
 }
 
-interface LineChartDatum {
+export interface LineChartDatum {
   name: string;
   date: Date;
   value: number;
 }
 
-type LineChartData = {
+export type LineChartData = {
   name: string;
   values: LineChartDatum[];
 };
@@ -70,7 +70,7 @@ interface BarChartDatumValue {
   budget: number;
 }
 
-interface BarChartDatum {
+export interface BarChartDatum {
   label: string;
   date: Date;
   values: BarChartDatumValue[];
@@ -93,9 +93,10 @@ const operatingCurrenciesWithConversion = derived(
   }
 );
 
-interface HierarchyChart {
+export interface HierarchyChart {
   type: "hierarchy";
   data: Record<string, AccountHierarchyNode>;
+  tooltipText?: undefined;
 }
 
 interface BarChart {
@@ -113,6 +114,7 @@ interface LineChart {
 interface ScatterPlot {
   type: "scatterplot";
   data: ScatterPlotDatum[];
+  tooltipText?: undefined;
 }
 
 type ChartTypes = HierarchyChart | BarChart | ScatterPlot | LineChart;
@@ -248,9 +250,11 @@ const parsers: Record<string, (json: unknown, label: string) => ChartTypes> = {
   },
 };
 
-export function parseChartData(): (ChartTypes & {
-  name: string;
-})[] {
+export type NamedChartTypes = ChartTypes & {
+  name?: string;
+};
+
+export function parseChartData(): NamedChartTypes[] {
   const chartData = array(
     object({
       label: string,
@@ -258,9 +262,7 @@ export function parseChartData(): (ChartTypes & {
       data: unknown,
     })
   )(getScriptTagJSON("#chart-data"));
-  const result: (ChartTypes & {
-    name: string;
-  })[] = [];
+  const result: NamedChartTypes[] = [];
   chartData.forEach((chart) => {
     const parser = parsers[chart.type];
     if (parser) {

@@ -5,8 +5,12 @@
   import Sunburst from "./Sunburst.svelte";
   import Treemap from "./Treemap.svelte";
 
+  /** @type {import("svelte/store").Writable<string[]>} */
   const context = getContext("chart-currencies");
+
+  /** @type {Record<string, import(".").AccountHierarchyNode>} */
   export let data;
+  /** @type {number} */
   export let width;
 
   $: currencies = Object.keys(data);
@@ -21,7 +25,7 @@
 {:else if $chartMode === 'treemap' && data[currency]}
   <Treemap data={data[currency]} {currency} {width} />
 {:else if $chartMode === 'sunburst'}
-  <svg class="sunburst" {width} height={500}>
+  <svg {width} height={500}>
     {#each currencies as currency, i (currency)}
       <g transform={`translate(${(width * i) / currencies.length},0)`}>
         <Sunburst

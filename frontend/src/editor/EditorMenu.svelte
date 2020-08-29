@@ -1,9 +1,12 @@
 <script>
   import { createEventDispatcher } from "svelte";
 
-  import { _, urlFor } from "../helpers";
+  import { _ } from "../i18n";
+  import { urlFor } from "../helpers";
 
+  /** @type {string[]} */
   export let sources;
+  /** @type {string} */
   export let file_path;
 
   const dispatch = createEventDispatcher();
