@@ -1,53 +1,30 @@
-<script>
-  import { get, saveEntries } from "../api";
-  import { _ } from "../i18n";
-  import { urlHash, closeOverlay } from "../stores";
-
-  import ModalBase from "../modals/ModalBase.svelte";
+<script lang="ts">
+  import type { Entry as EntryType } from "../entries";
   import Entry from "../entry-forms/Entry.svelte";
+  import { _ } from "../i18n";
+  import ModalBase from "../modals/ModalBase.svelte";
 
-  /** @type {import('../entries').Entry[]} */
-  let entries = [];
-  /** @type {number} */
+  import { isDuplicate } from "./helpers";
+
+  export let entries: EntryType[];
+  export let save: () => void;
+  export let close: () => void;
+
   let currentIndex = 0;
-  /** @type {boolean} */
-  let duplicate;
-  /** @type {number} */
-  let duplicates;
 
-  /** @type {import('../entries').Entry} */
-  let entry;
-  /** @type {boolean} */
-  let shown;
-
-  /**
-   * @param {import("../entries").Entry} e
-   */
-  function isDuplicate(e) {
-    return !!e.meta.__duplicate__;
-  }
-
-  $: shown = $urlHash.startsWith("extract");
-  $: if (shown) {
-    const params = new URLSearchParams($urlHash.slice(8));
-    const filename = params.get("filename") || "";
-    const importer = params.get("importer") || "";
-    get("extract", { filename, importer }).then((data) => {
-      entries = data;
-    });
-  }
+  $: shown = entries.length > 0;
   $: entry = entries[currentIndex];
-  $: if (entry) {
-    duplicates = entry && entries.filter((e) => isDuplicate(e)).length;
-    duplicate = isDuplicate(entry);
+  $: duplicate = entry && isDuplicate(entry);
+  $: duplicates = entries.filter((e) => isDuplicate(e)).length;
+  $: if (entries.length > 0 && currentIndex >= entries.length) {
+    currentIndex = 0;
   }
 
   async function submitOrNext() {
     if (currentIndex < entries.length - 1) {
       currentIndex += 1;
     } else {
-      await saveEntries(entries.filter((e) => !isDuplicate(e)));
-      closeOverlay();
+      save();
     }
   }
 
@@ -60,20 +37,9 @@
   }
 </script>
 
-<style>
-  pre {
-    font-size: 0.9em;
-    white-space: pre-wrap;
-  }
-
-  .duplicate {
-    opacity: 0.5;
-  }
-</style>
-
-<ModalBase {shown}>
+<ModalBase {shown} closeHandler={close}>
   <form novalidate={duplicate} on:submit|preventDefault={submitOrNext}>
-    <h3>{_('Import')}</h3>
+    <h3>{_("Import")}</h3>
     {#if entry}
       <div class="flex-row">
         <h3>
@@ -89,7 +55,8 @@
           <input
             type="checkbox"
             checked={duplicate}
-            on:click={toggleDuplicate} />
+            on:click={toggleDuplicate}
+          />
           ignore duplicate
         </label>
       </div>
@@ -103,34 +70,47 @@
             class="muted"
             on:click={() => {
               currentIndex = 0;
-            }}>
+            }}
+          >
             ⏮
           </button>
           <button type="button" class="muted" on:click={previousEntry}>
-            {_('Previous')}
+            {_("Previous")}
           </button>
         {/if}
         <span class="spacer" />
         {#if currentIndex < entries.length - 1}
-          <button type="submit">{_('Next')}</button>
+          <button type="submit">{_("Next")}</button>
           <button
             type="button"
             class="muted"
             on:click={() => {
               currentIndex = entries.length - 1;
-            }}>
+            }}
+          >
             ⏭
           </button>
-        {:else}<button type="submit">{_('Save')}</button>{/if}
+        {:else}<button type="submit">{_("Save")}</button>{/if}
       </div>
       <hr />
       {#if entry.meta.__source__}
         <h3>
-          {_('Source')}
-          {#if entry.meta.lineno}({_('Line')}: {entry.meta.lineno}){/if}
+          {_("Source")}
+          {#if entry.meta.lineno}({_("Line")}: {entry.meta.lineno}){/if}
         </h3>
         <pre>{entry.meta.__source__}</pre>
       {/if}
     {/if}
   </form>
 </ModalBase>
+
+<style>
+  pre {
+    font-size: 0.9em;
+    white-space: pre-wrap;
+  }
+
+  .duplicate {
+    opacity: 0.5;
+  }
+</style>

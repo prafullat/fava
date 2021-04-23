@@ -1,28 +1,27 @@
-<script>
+<script lang="ts">
   import { treemap } from "d3-hierarchy";
+  import type { HierarchyRectangularNode } from "d3-hierarchy";
 
+  import { ctx, formatPercentage } from "../format";
+  import { urlFor } from "../helpers";
   import router from "../router";
-  import { accountUrl } from "../helpers";
+
   import { treemapScale } from "./helpers";
-  import { formatCurrency, formatPercentage } from "../format";
   import { followingTooltip } from "./tooltip";
 
-  /** @type {import(".").AccountHierarchyNode} */
-  export let data;
-  /** @type {number} */
-  export let width;
-  /** @type {string} */
-  export let currency;
+  import type { AccountHierarchyDatum, AccountHierarchyNode } from ".";
+
+  export let data: AccountHierarchyNode;
+  export let width: number;
+  export let currency: string;
+
   $: height = Math.min(width / 2.5, 400);
 
-  const tree = treemap().paddingInner(1);
+  const tree = treemap<AccountHierarchyDatum>().paddingInner(1);
   $: root = tree.size([width, height])(data);
   $: leaves = root.leaves().filter((d) => d.value);
 
-  /**
-   * @param {import(".").AccountHierarchyNode} d
-   */
-  function fill(d) {
+  function fill(d: AccountHierarchyNode) {
     const node = d.data.dummy && d.parent ? d.parent : d;
     if (node.depth === 1 || !node.parent) {
       return $treemapScale(node.data.account);
@@ -30,24 +29,20 @@
     return $treemapScale(node.parent.data.account);
   }
 
-  /**
-   * @param {import(".").AccountHierarchyNode} d
-   */
-  function tooltipText(d) {
+  function tooltipText(d: AccountHierarchyNode) {
     const val = d.value || 0;
     const rootValue = root.value || 1;
 
-    return `${formatCurrency(val)} ${currency} (${formatPercentage(
+    return `${$ctx.currency(val)} ${currency} (${formatPercentage(
       val / rootValue
     )})<em>${d.data.account}</em>`;
   }
 
-  /**
-   * @param {SVGTextElement} node
-   * @param {import(".").AccountHierarchyNode} param
-   */
-  function setOpacity(node, param) {
-    function update(d) {
+  function setOpacity(
+    node: SVGTextElement,
+    param: HierarchyRectangularNode<AccountHierarchyDatum>
+  ) {
+    function update(d: HierarchyRectangularNode<AccountHierarchyDatum>) {
       const length = node.getComputedTextLength();
       node.style.opacity =
         d.x1 - d.x0 > length + 4 && d.y1 - d.y0 > 14 ? "1" : "0";
@@ -56,6 +51,27 @@
     return { update };
   }
 </script>
+
+<svg {width} {height}>
+  {#each leaves as d}
+    <g
+      transform={`translate(${d.x0},${d.y0})`}
+      use:followingTooltip={() => tooltipText(d)}
+    >
+      <rect fill={fill(d)} width={d.x1 - d.x0} height={d.y1 - d.y0} />
+      <text
+        use:setOpacity={d}
+        on:click={() => router.navigate(urlFor(`account/${d.data.account}/`))}
+        dy=".5em"
+        x={(d.x1 - d.x0) / 2}
+        y={(d.y1 - d.y0) / 2}
+        text-anchor="middle"
+      >
+        {d.data.account.split(":").pop() || ""}
+      </text>
+    </g>
+  {/each}
+</svg>
 
 <style>
   svg {
@@ -71,22 +87,3 @@
     cursor: pointer;
   }
 </style>
-
-<svg {width} {height}>
-  {#each leaves as d}
-    <g
-      transform={`translate(${d.x0},${d.y0})`}
-      use:followingTooltip={() => tooltipText(d)}>
-      <rect fill={fill(d)} width={d.x1 - d.x0} height={d.y1 - d.y0} />
-      <text
-        use:setOpacity={d}
-        on:click={() => router.navigate(accountUrl(d.data.account))}
-        dy=".5em"
-        x={(d.x1 - d.x0) / 2}
-        y={(d.y1 - d.y0) / 2}
-        text-anchor="middle">
-        {d.data.account.split(':').pop() || ''}
-      </text>
-    </g>
-  {/each}
-</svg>

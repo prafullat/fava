@@ -1,16 +1,18 @@
-import router from "./router";
+import type { Entry } from "./entries";
+import { entryValidator, Transaction } from "./entries";
 import { urlFor } from "./helpers";
-import { notify } from "./notifications";
-import { Entry, Transaction, entryValidator } from "./entries";
 import { fetch, handleJSON } from "./lib/fetch";
 import {
-  string,
-  object,
-  unknown,
+  array,
   boolean,
   number,
-  array,
+  object,
+  string,
+  unknown,
 } from "./lib/validation";
+import { log_error } from "./log";
+import { notify } from "./notifications";
+import router from "./router";
 
 const validateAPIResponse = object({ data: unknown });
 const putAPIValidators = {
@@ -114,7 +116,7 @@ export async function moveDocument(
  */
 export async function deleteDocument(filename: string): Promise<boolean> {
   try {
-    const url = urlFor(`api/document`, { filename }, false);
+    const url = urlFor("api/document", { filename }, false);
     const res = await fetch(url, { method: "DELETE" }).then(handleJSON);
     const { data }: { data: unknown } = validateAPIResponse(res);
     notify(string(data));
@@ -137,7 +139,10 @@ export async function saveEntries(entries: Entry[]): Promise<void> {
     router.reload();
     notify(data);
   } catch (error) {
-    notify(`Saving failed: ${error}`, "error");
+    log_error(error);
+    if (error instanceof Error) {
+      notify(`Saving failed: ${error.message}`, "error");
+    }
     throw error;
   }
 }

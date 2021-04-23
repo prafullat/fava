@@ -1,23 +1,19 @@
-<script>
-  import { emptyPosting, Transaction } from "../entries";
+<script lang="ts">
   import { get } from "../api";
+  import AutocompleteInput from "../AutocompleteInput.svelte";
+  import { emptyPosting, Transaction } from "../entries";
+  import type { Posting } from "../entries";
   import { _ } from "../i18n";
   import { payees } from "../stores";
 
-  import AutocompleteInput from "../AutocompleteInput.svelte";
   import AddMetadataButton from "./AddMetadataButton.svelte";
   import EntryMetadata from "./EntryMetadata.svelte";
   import PostingSvelte from "./Posting.svelte";
 
-  /** @type {import("../entries").Transaction} */
-  export let entry;
-  /** @type {string[] | undefined} */
-  let suggestions;
+  export let entry: Transaction;
+  let suggestions: string[] | undefined;
 
-  /**
-   * @param {import("../entries").Posting} posting
-   */
-  function removePosting(posting) {
+  function removePosting(posting: Posting) {
     entry.postings = entry.postings.filter((p) => p !== posting);
   }
 
@@ -44,17 +40,64 @@
     entry = Object.assign(new Transaction(), data, { date: entry.date });
   }
 
-  /**
-   * @param {CustomEvent<{from: number, to: number}>} ev
-   */
-  function movePosting(ev) {
-    const { from, to } = ev.detail;
+  function movePosting({ from, to }: { from: number; to: number }) {
     const moved = entry.postings[from];
     entry.postings.splice(from, 1);
     entry.postings.splice(to, 0, moved);
     entry.postings = entry.postings;
   }
 </script>
+
+<!-- svelte-ignore a11y-label-has-associated-control -->
+<div>
+  <div class="flex-row">
+    <input type="date" bind:value={entry.date} required />
+    <input type="text" name="flag" bind:value={entry.flag} required />
+    <label>
+      <span>{_("Payee")}:</span>
+      <AutocompleteInput
+        className="payee"
+        placeholder={_("Payee")}
+        bind:value={entry.payee}
+        suggestions={$payees}
+        on:select={autocompleteSelectPayee}
+      />
+    </label>
+    <label>
+      <span>{_("Narration")}:</span>
+      <input
+        type="text"
+        name="narration"
+        placeholder={_("Narration")}
+        bind:value={entry.narration}
+      />
+      <AddMetadataButton bind:meta={entry.meta} />
+    </label>
+    <button
+      class="muted round"
+      type="button"
+      on:click={addPosting}
+      title={_("Add posting")}
+      tabindex={-1}
+    >
+      p
+    </button>
+  </div>
+  <EntryMetadata bind:meta={entry.meta} />
+  <div class="flex-row">
+    <span class="label"> <span>{_("Postings")}:</span> </span>
+  </div>
+  {#each entry.postings as posting, index}
+    <PostingSvelte
+      bind:posting
+      {index}
+      {suggestions}
+      add={addPosting}
+      move={movePosting}
+      remove={() => removePosting(posting)}
+    />
+  {/each}
+</div>
 
 <style>
   input[name="flag"] {
@@ -87,50 +130,3 @@
     }
   }
 </style>
-
-<!-- svelte-ignore a11y-label-has-associated-control -->
-<div>
-  <div class="flex-row">
-    <input type="date" bind:value={entry.date} required />
-    <input type="text" name="flag" bind:value={entry.flag} required />
-    <label>
-      <span>{_('Payee')}:</span>
-      <AutocompleteInput
-        className="payee"
-        placeholder={_('Payee')}
-        bind:value={entry.payee}
-        suggestions={$payees}
-        on:select={autocompleteSelectPayee} />
-    </label>
-    <label>
-      <span>{_('Narration')}:</span>
-      <input
-        type="text"
-        name="narration"
-        placeholder={_('Narration')}
-        bind:value={entry.narration} />
-      <AddMetadataButton bind:meta={entry.meta} />
-    </label>
-    <button
-      class="muted round"
-      type="button"
-      on:click={addPosting}
-      title={_('Add posting')}
-      tabindex={-1}>
-      p
-    </button>
-  </div>
-  <EntryMetadata bind:meta={entry.meta} />
-  <div class="flex-row">
-    <span class="label"> <span>{_('Postings')}:</span> </span>
-  </div>
-  {#each entry.postings as posting, index}
-    <PostingSvelte
-      bind:posting
-      {index}
-      {suggestions}
-      on:add={addPosting}
-      on:move={movePosting}
-      on:remove={() => removePosting(posting)} />
-  {/each}
-</div>

@@ -1,18 +1,19 @@
-<script>
+<script lang="ts">
   import { extent } from "d3-array";
-  import { axisLeft, axisBottom } from "d3-axis";
-  import { scalePoint, scaleUtc } from "d3-scale";
+  import { axisBottom, axisLeft } from "d3-axis";
   import { quadtree } from "d3-quadtree";
+  import { scalePoint, scaleUtc } from "d3-scale";
+
+  import { dateFormat } from "../format";
 
   import { axis } from "./axis";
   import { scatterplotScale } from "./helpers";
-  import { dateFormat } from "../format";
   import { positionedTooltip } from "./tooltip";
 
-  /** @type {import('.').ScatterPlotDatum[]} */
-  export let data;
-  /** @type {number} */
-  export let width;
+  import type { ScatterPlotDatum } from ".";
+
+  export let data: ScatterPlotDatum[];
+  export let width: number;
 
   const margin = {
     top: 10,
@@ -48,39 +49,29 @@
     (d) => y(d.type) || 0
   );
 
-  /**
-   * @param {import('.').ScatterPlotDatum} d
-   * @returns {string}
-   */
-  function tooltipText(d) {
+  function tooltipText(d: ScatterPlotDatum) {
     return `${d.description}<em>${dateFormat.day(d.date)}</em>`;
   }
 
-  /**
-   * @param {number} xPos
-   * @param {number} yPos
-   * @returns {[number, number, string] | undefined}
-   */
-  function tooltipInfo(xPos, yPos) {
+  function tooltipInfo(
+    xPos: number,
+    yPos: number
+  ): [number, number, string] | undefined {
     const d = quad.find(xPos, yPos);
     return d ? [x(d.date), y(d.type) || 0, tooltipText(d)] : undefined;
   }
 </script>
 
-<style>
-  svg > g {
-    pointer-events: all;
-  }
-</style>
-
 <svg {width} {height}>
   <g
     use:positionedTooltip={tooltipInfo}
-    transform={`translate(${margin.left},${margin.top})`}>
+    transform={`translate(${margin.left},${margin.top})`}
+  >
     <g
       class="x axis"
       use:axis={xAxis}
-      transform={`translate(0,${innerHeight})`} />
+      transform={`translate(0,${innerHeight})`}
+    />
     <g class="y axis" use:axis={yAxis} />
     <g>
       {#each data as dot}
@@ -88,8 +79,15 @@
           r="5"
           fill={scatterplotScale(dot.type)}
           cx={x(dot.date)}
-          cy={y(dot.type)} />
+          cy={y(dot.type)}
+        />
       {/each}
     </g>
   </g>
 </svg>
+
+<style>
+  svg > g {
+    pointer-events: all;
+  }
+</style>

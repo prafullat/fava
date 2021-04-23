@@ -1,20 +1,13 @@
-<script>
+<script lang="ts">
+  import AutocompleteInput from "../AutocompleteInput.svelte";
   import { _ } from "../i18n";
   import { accounts } from "../stores";
 
-  import AutocompleteInput from "../AutocompleteInput.svelte";
+  export let value: string;
+  export let suggestions: string[] | undefined = undefined;
+  export let className: string | undefined = undefined;
 
-  /** @type {string} */
-  export let value;
-  /** @type {string[] | undefined} */
-  export let suggestions = undefined;
-  /** @type {string | undefined} */
-  export let className = undefined;
-
-  /**
-   * @param {string} val
-   */
-  function checkValidity(val) {
+  function checkValidity(val: string) {
     return !$accounts.length || $accounts.includes(val)
       ? ""
       : _("Should be one of the declared accounts");
@@ -22,8 +15,9 @@
 </script>
 
 <AutocompleteInput
-  placeholder={_('Account')}
+  placeholder={_("Account")}
   bind:value
   {className}
   {checkValidity}
-  suggestions={suggestions || $accounts} />
+  suggestions={suggestions || $accounts}
+/>

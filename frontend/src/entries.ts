@@ -1,14 +1,14 @@
 import { todayAsString } from "./format";
+import type { Validator } from "./lib/validation";
 import {
   array,
-  object,
-  string,
   constant,
-  record,
-  unknown,
-  union,
-  Validator,
+  object,
   optional_string,
+  record,
+  string,
+  union,
+  unknown,
 } from "./lib/validation";
 
 export interface Posting {

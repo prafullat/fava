@@ -17,8 +17,8 @@ import threading
 from io import BytesIO
 from typing import Any
 from typing import Dict
-from typing import Optional
 from typing import List
+from typing import Optional
 
 import flask
 import markdown2  # type: ignore
@@ -252,12 +252,8 @@ def _pull_beancount_file(_, values) -> None:
             # one of the file slugs changed, update the mapping
             update_ledger_slugs(app.config["LEDGERS"].values())
         g.ledger = app.config["LEDGERS"][g.beancount_file_slug]
-        g.conversion = request.args.get(
-            "conversion", g.ledger.fava_options["conversion"]
-        )
-        g.interval = Interval.get(
-            request.args.get("interval", g.ledger.fava_options["interval"])
-        )
+        g.conversion = request.args.get("conversion", "at_cost")
+        g.interval = Interval.get(request.args.get("interval", "month"))
 
 
 @app.errorhandler(FavaAPIException)
@@ -274,7 +270,11 @@ def index():
     """Redirect to the Income Statement (of the given or first file)."""
     if not g.beancount_file_slug:
         g.beancount_file_slug = next(iter(app.config["LEDGERS"]))
-    return redirect(url_for("report", report_name="income_statement"))
+    index_url = url_for("index")
+    default_path = app.config["LEDGERS"][g.beancount_file_slug].fava_options[
+        "default-page"
+    ]
+    return redirect(f"{index_url}{default_path}")
 
 
 @app.route("/<bfile>/account/<name>/")
@@ -368,15 +368,15 @@ def download_journal():
     return send_file(data, as_attachment=True, attachment_filename=filename)
 
 
-@app.route("/<bfile>/help/")
-@app.route("/<bfile>/help/<string:page_slug>/")
-def help_page(page_slug="_index"):
+@app.route("/<bfile>/help/", defaults={"page_slug": "_index"})
+@app.route("/<bfile>/help/<string:page_slug>")
+def help_page(page_slug):
     """Fava's included documentation."""
     if page_slug not in HELP_PAGES:
         abort(404)
     html = markdown2.markdown_path(
         (resource_path("help") / (page_slug + ".md")),
-        extras=["fenced-code-blocks", "tables"],
+        extras=["fenced-code-blocks", "tables", "header-ids"],
     )
     return render_template(
         "_layout.html",

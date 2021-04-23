@@ -1,7 +1,10 @@
-<script>
-  /** @type {[string, string][]} */
-  export let legend;
+<script lang="ts">
+  export let legend: [string, string][];
 </script>
+
+{#each legend as [item, color]}
+  <span> <i style="background-color: {color}" /> {item} </span>
+{/each}
 
 <style>
   span,
@@ -16,7 +19,3 @@
     border-radius: 10px;
   }
 </style>
-
-{#each legend as [item, color]}
-  <span> <i style="background-color: {color}" /> {item} </span>
-{/each}

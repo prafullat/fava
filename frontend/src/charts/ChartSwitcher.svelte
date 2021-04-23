@@ -1,15 +1,16 @@
-<script>
+<script lang="ts">
   import { onMount } from "svelte";
 
   import { bindKey } from "../keyboard-shortcuts";
-  import { parseChartData } from ".";
   import { activeChart, showCharts } from "../stores/chart";
 
-  import ConversionAndInterval from "./ConversionAndInterval.svelte";
   import Chart from "./Chart.svelte";
+  import ConversionAndInterval from "./ConversionAndInterval.svelte";
 
-  /** @type {import(".").NamedChartTypes[]} */
-  let charts = [];
+  import { parseChartData } from ".";
+  import type { NamedChartTypes } from ".";
+
+  let charts: NamedChartTypes[] = [];
 
   onMount(() => {
     charts = parseChartData();
@@ -38,6 +39,24 @@
   });
 </script>
 
+{#if $activeChart}
+  <Chart chart={$activeChart}>
+    <ConversionAndInterval />
+  </Chart>
+  <div hidden={!$showCharts}>
+    {#each charts as chart}
+      <span
+        class:selected={chart === $activeChart}
+        on:click={() => {
+          $activeChart = chart;
+        }}
+      >
+        {chart.name}
+      </span>
+    {/each}
+  </div>
+{/if}
+
 <style>
   div {
     margin-bottom: 1.5em;
@@ -48,6 +67,7 @@
 
   span {
     padding: 0 0.5em;
+    cursor: pointer;
   }
 
   span + span {
@@ -59,20 +79,3 @@
     color: var(--color-text-lighter);
   }
 </style>
-
-{#if $activeChart}
-  <Chart chart={$activeChart}>
-    <ConversionAndInterval />
-  </Chart>
-  <div hidden={!$showCharts}>
-    {#each charts as chart}
-      <span
-        class:selected={chart === $activeChart}
-        on:click={() => {
-          $activeChart = chart;
-        }}>
-        {chart.name}
-      </span>
-    {/each}
-  </div>
-{/if}

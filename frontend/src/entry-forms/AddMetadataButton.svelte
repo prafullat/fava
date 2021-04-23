@@ -1,8 +1,7 @@
-<script>
+<script lang="ts">
   import { _ } from "../i18n";
 
-  /** @type {Record<string, unknown>} */
-  export let meta;
+  export let meta: Record<string, unknown>;
 
   function addMetadata() {
     meta[""] = "";
@@ -15,6 +14,7 @@
   type="button"
   on:click={addMetadata}
   tabindex={-1}
-  title={_('Add metadata')}>
+  title={_("Add metadata")}
+>
   m
 </button>

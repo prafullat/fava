@@ -1,38 +1,42 @@
-<script>
+<script lang="ts">
   import { getContext } from "svelte";
-  import { chartCurrency, chartMode } from "../stores/chart";
+  import type { Writable } from "svelte/store";
+
+  import { chartCurrency, hierarchyChartMode } from "../stores/chart";
 
   import Sunburst from "./Sunburst.svelte";
   import Treemap from "./Treemap.svelte";
 
-  /** @type {import("svelte/store").Writable<string[]>} */
-  const context = getContext("chart-currencies");
+  import type { HierarchyChart } from ".";
 
-  /** @type {Record<string, import(".").AccountHierarchyNode>} */
-  export let data;
-  /** @type {number} */
-  export let width;
+  const context: Writable<string[]> = getContext("chart-currencies");
 
-  $: currencies = Object.keys(data);
+  export let data: HierarchyChart["data"];
+  export let width: number;
+
+  $: currencies = [...data.keys()];
   $: currency = $chartCurrency || currencies[0];
   $: context.set(currencies);
+
+  $: treemapData = $hierarchyChartMode === "treemap" && data.get(currency);
 </script>
 
 {#if currencies.length === 0}
   <svg {width}>
     <text x={width / 2} y={80} text-anchor="middle">Chart is empty.</text>
   </svg>
-{:else if $chartMode === 'treemap' && data[currency]}
-  <Treemap data={data[currency]} {currency} {width} />
-{:else if $chartMode === 'sunburst'}
+{:else if treemapData}
+  <Treemap data={treemapData} {currency} {width} />
+{:else if $hierarchyChartMode === "sunburst"}
   <svg {width} height={500}>
-    {#each currencies as currency, i (currency)}
+    {#each [...data] as [currency, d], i (currency)}
       <g transform={`translate(${(width * i) / currencies.length},0)`}>
         <Sunburst
-          data={data[currency]}
+          data={d}
           {currency}
           width={width / currencies.length}
-          height={500} />
+          height={500}
+        />
       </g>
     {/each}
   </svg>

@@ -1,14 +1,14 @@
-<script>
-  import { create } from "../entries";
+<script lang="ts">
   import { saveEntries } from "../api";
+  import { create } from "../entries";
+  import type { EntryTypeName } from "../entries";
+  import Entry from "../entry-forms/Entry.svelte";
   import { _ } from "../i18n";
-  import { urlHash, closeOverlay } from "../stores";
+  import { closeOverlay, urlHash } from "../stores";
 
   import ModalBase from "./ModalBase.svelte";
-  import Entry from "../entry-forms/Entry.svelte";
 
-  /** @type {[import("../entries").EntryTypeName, string][]} */
-  const entryTypes = [
+  const entryTypes: [EntryTypeName, string][] = [
     ["Transaction", _("Transaction")],
     ["Balance", _("Balance")],
     ["Note", _("Note")],
@@ -16,14 +16,12 @@
 
   let entry = create("Transaction");
 
-  /**
-   * @param {Event} event
-   */
-  async function submitAndNew(event) {
-    if (
-      event.target instanceof HTMLButtonElement &&
-      event.target.form?.reportValidity()
-    ) {
+  async function submitAndNew({
+    currentTarget,
+  }: {
+    currentTarget: HTMLButtonElement;
+  }) {
+    if (currentTarget.form?.reportValidity()) {
       await saveEntries([entry]);
       entry = create(entry.type);
     }
@@ -38,20 +36,21 @@
   $: shown = $urlHash === "add-transaction";
 </script>
 
-<ModalBase {shown}>
+<ModalBase {shown} focus=".payee input">
   <form on:submit|preventDefault={submit}>
     <h3>
-      {_('Add')}
+      {_("Add")}
       {#each entryTypes as [type, displayName]}
         <button
           type="button"
           class:muted={entry.type !== type}
           on:click={() => {
             entry = create(type);
-          }}>
+          }}
+        >
           {displayName}
         </button>
-        {' '}
+        {" "}
       {/each}
     </h3>
     <Entry bind:entry />
@@ -60,10 +59,11 @@
       <button
         type="submit"
         on:click|preventDefault={submitAndNew}
-        class="muted">
-        {_('Save and add new')}
+        class="muted"
+      >
+        {_("Save and add new")}
       </button>
-      <button type="submit">{_('Save')}</button>
+      <button type="submit">{_("Save")}</button>
     </div>
   </form>
 </ModalBase>

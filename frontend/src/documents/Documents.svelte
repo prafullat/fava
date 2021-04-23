@@ -1,54 +1,37 @@
-<script>
+<script lang="ts">
   import { moveDocument } from "../api";
-  import { baseURL } from "../stores/url";
+  import AccountInput from "../entry-forms/AccountInput.svelte";
   import { _ } from "../i18n";
+  import { basename } from "../lib/paths";
+  import { stratify } from "../lib/tree";
+  import ModalBase from "../modals/ModalBase.svelte";
   import router from "../router";
 
-  import { basename } from "../lib/paths";
-  import { entriesToTree } from "./util";
-
-  import AccountInput from "../entry-forms/AccountInput.svelte";
-  import ModalBase from "../modals/ModalBase.svelte";
   import Accounts from "./Accounts.svelte";
+  import DocumentPreview from "./DocumentPreview.svelte";
   import Table from "./Table.svelte";
 
-  /** @typedef {{account: string, filename: string, date: string}} Document */
+  type Document = { account: string; filename: string; date: string };
+  type MoveDetails = { account: string; filename: string; newName: string };
 
-  /** @type {Document[]} */
-  export let data;
+  export let data: Document[];
 
-  /** @type {Document} */
-  let selected;
-  /** @type {{account: string, filename: string, newName: string} | null} */
-  let moving = null;
+  $: node = stratify(
+    new Set(data.map((e) => e.account)),
+    (s) => s,
+    (name) => ({ name })
+  );
 
-  /**
-   * @param {Document} doc
-   */
-  function copyMoveable(doc) {
-    return {
-      account: doc.account,
-      filename: doc.filename,
-      newName: basename(doc.filename),
-    };
-  }
+  let selected: Document;
+  let moving: MoveDetails | null = null;
 
   /**
    * Rename the selected document with <F2>.
-   * @param {KeyboardEvent} ev
    */
-  function keyup(ev) {
+  function keyup(ev: KeyboardEvent) {
     if (ev.key === "F2" && selected) {
-      moving = copyMoveable(selected);
+      moving = { ...selected, newName: basename(selected.filename) };
     }
-  }
-
-  /**
-   * Move a document to the account it is dropped on.
-   * @param {CustomEvent} ev
-   */
-  function drop(ev) {
-    moving = copyMoveable(ev.detail);
   }
 
   async function move() {
@@ -62,55 +45,51 @@
   }
 </script>
 
-<style>
-  .container {
-    position: fixed;
-    top: var(--header-height);
-    right: 0;
-    bottom: 0;
-    left: var(--aside-width);
-    display: flex;
-  }
-  .half-column {
-    width: 33%;
-    height: 100%;
-    overflow: auto;
-    resize: horizontal;
-    border-right: thin solid var(--color-sidebar-border);
-  }
-</style>
-
 <svelte:window on:keyup={keyup} />
 {#if moving}
   <ModalBase
     shown={true}
     closeHandler={() => {
       moving = null;
-    }}>
+    }}
+  >
     <div>
-      <h3>{_('Move or rename document')}</h3>
+      <h3>{_("Move or rename document")}</h3>
       <p><code>{moving.filename}</code></p>
       <p>
         <AccountInput bind:value={moving.account} />
         <input size={40} bind:value={moving.newName} />
-        <button type="button" on:click={move}>{'Move'}</button>
+        <button type="button" on:click={move}>{"Move"}</button>
       </p>
     </div>
   </ModalBase>
 {/if}
-<div class="container">
-  <div class="half-column" style="width: 14rem;">
-    <Accounts node={entriesToTree(data)} on:drop={drop} />
-  </div>
-  <div class="half-column">
+<div class="fixed-fullsize-container">
+  <Accounts
+    {node}
+    move={(arg) => {
+      moving = { ...arg, newName: basename(arg.filename) };
+    }}
+  />
+  <div>
     <Table bind:selected {data} />
   </div>
-  <div style="flex: 1;">
-    {#if selected}
-      <object
-        title={selected.filename}
-        data={`${$baseURL}document/?filename=${selected.filename}`}
-        style="width:100%;height:100%" />
-    {/if}
-  </div>
+  {#if selected}
+    <DocumentPreview filename={selected.filename} />
+  {/if}
 </div>
+
+<style>
+  .fixed-fullsize-container {
+    display: grid;
+    grid-template-columns: 1fr 2fr 3fr;
+  }
+  .fixed-fullsize-container > :global(*) {
+    height: 100%;
+    overflow: auto;
+    resize: horizontal;
+  }
+  .fixed-fullsize-container > :global(* + *) {
+    border-left: thin solid var(--color-sidebar-border);
+  }
+</style>
